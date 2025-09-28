@@ -114,15 +114,25 @@ contract DepegPenaltyHook is BaseOverrideFee, AccessControl {
             (pythAdapter.computeConfRatioBps(price0, conf0) + pythAdapter.computeConfRatioBps(price1, conf1)) / 2;
         if (confRatioBps > VOLATILE_THRESHOLD) return state.baseFee;
 
+        // console.log(price0);
+        // console.log(price1);
+        // console.log(confRatioBps);
+
         // Compute depeg: |price0 - price1| / price1 * 10000
         int64 depegDiff = price0 > price1 ? price0 - price1 : price1 - price0;
         uint256 depegBps = (uint256(depegDiff >= 0 ? int256(depegDiff) : int256(-depegDiff))) * 10000
             / (price1 > 0 ? uint256(uint64(price1)) : 1);
+        // console.log(depegDiff);
+        // console.log(depegBps);
 
         bool worsensDepeg = (price0 < price1 && params.zeroForOne) || (price0 > price1 && !params.zeroForOne);
+        // console.log(worsensDepeg);
 
         if (worsensDepeg && depegBps > DEPEG_THRESHOLD) {
             uint24 fee = state.baseFee + uint24(depegBps / 10 * 100);
+            // console.log(fee);
+            // console.log(state.baseFee);
+            // console.log(depegBps);
             return fee > MAX_PENALTY_FEE ? MAX_PENALTY_FEE : fee;
         } else if (!worsensDepeg && depegBps > DEPEG_THRESHOLD) {
             uint24 fee = 1000 - uint24(depegBps / 20 * 50);
@@ -133,7 +143,6 @@ contract DepegPenaltyHook is BaseOverrideFee, AccessControl {
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory permissions) {
         permissions = super.getHookPermissions();
-        permissions.afterSwap = true;
         return permissions;
     }
 }
