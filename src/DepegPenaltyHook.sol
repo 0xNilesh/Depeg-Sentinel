@@ -87,12 +87,11 @@ contract DepegPenaltyHook is BaseOverrideFee, AccessControl {
         _;
     }
 
-    function _afterInitialize(
-        address sender,
-        PoolKey calldata key,
-        uint160 sqrtPriceX96,
-        int24 tick
-    ) internal override returns (bytes4) {
+    function _afterInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, int24 tick)
+        internal
+        override
+        returns (bytes4)
+    {
         PoolId poolId = key.toId();
         poolStates[poolId].baseFee = key.fee;
         poolStates[poolId].lastDepegBps = 0;
@@ -100,18 +99,19 @@ contract DepegPenaltyHook is BaseOverrideFee, AccessControl {
         return this.afterInitialize.selector;
     }
 
-    function _getFee(
-        address sender,
-        PoolKey calldata key,
-        SwapParams calldata params,
-        bytes calldata hookData
-    ) internal view override returns (uint24) {
+    function _getFee(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
+        internal
+        view
+        override
+        returns (uint24)
+    {
         PoolId poolId = key.toId();
         PoolState storage state = poolStates[poolId];
 
-        (int64 price0, uint64 conf0, ) = pythAdapter.getPriceWithConfidence(priceFeedId0);
-        (int64 price1, uint64 conf1, ) = pythAdapter.getPriceWithConfidence(priceFeedId1);
-        uint256 confRatioBps = (pythAdapter.computeConfRatioBps(price0, conf0) + pythAdapter.computeConfRatioBps(price1, conf1)) / 2;
+        (int64 price0, uint64 conf0,) = pythAdapter.getPriceWithConfidence(priceFeedId0);
+        (int64 price1, uint64 conf1,) = pythAdapter.getPriceWithConfidence(priceFeedId1);
+        uint256 confRatioBps =
+            (pythAdapter.computeConfRatioBps(price0, conf0) + pythAdapter.computeConfRatioBps(price1, conf1)) / 2;
         if (confRatioBps > VOLATILE_THRESHOLD) return state.baseFee;
 
         // Compute depeg: |price0 - price1| / price1 * 10000
